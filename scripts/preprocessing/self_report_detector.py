@@ -15,13 +15,19 @@ class SelfReportDetector:
         # Left-leaning ideologies with plural forms
         self.left_ideologies = [
             r"left[-\s]?wing(?:ers?)?",
-            r"socialist(?:s)?"
+            r"socialist(?:s)?",
+            r"communist(?:s)?",
+            r"anarchist(?:s)?",
+            r"left[-\s]?libertarian(?:s)?"
         ]
 
         # Right-leaning ideologies with plural forms
         self.right_ideologies = [
             r"right[-\s]?wing(?:ers?)?",
             r"capitalist(?:s)?"
+            r"conservatist(?:s)?"
+            r"right[-\s]?libertarian(?:s)?"
+            r"fundamentalist(?:s)?"
         ]
 
         all_ideologies = self.left_ideologies + self.right_ideologies
@@ -54,6 +60,18 @@ class SelfReportDetector:
         self.compiled_as_a_pattern = re.compile(as_a_pattern, re.IGNORECASE | re.VERBOSE)
         self.compiled_other_pattern = re.compile(other_prefixes_pattern, re.IGNORECASE | re.VERBOSE)
 
+        # Keyword lists for heuristic detection
+        self.left_keywords = ["universal healthcare", "social justice", "climate change", "progressive", "equality"]
+        self.right_keywords = ["free market", "tax cuts", "gun rights", "nationalism", "authoritarian"]
+        self.center_keywords = ["bipartisan", "moderate", "third way"]
+
+    def preprocess(self, text: str) -> str:
+        """Normalize and clean the text."""
+        text = re.sub(r"http[s]?://\S+", "", text)  # Remove URLs
+        text = re.sub(r"[^a-zA-Z0-9\s]", "", text)  # Remove special characters
+        text = text.lower().strip()                   # Convert to lowercase
+        return text
+
     def detect(self, texts: list) -> list:
         """
         Detect if a given list of texts includes self-declared left or right ideologies.
@@ -66,20 +84,21 @@ class SelfReportDetector:
         results = []
         for text in texts:
             # Check the "As a" pattern first
-            match = self.compiled_as_a_pattern.search(text)
+            preprocessed_text = self.preprocess(text)
+            match = self.compiled_as_a_pattern.search(preprocessed_text)
             if match:
                 ideology = match.group('ideology')
                 results.append(self._determine_side(ideology))
                 continue
 
             # Check the other prefix pattern
-            match = self.compiled_other_pattern.search(text)
+            match = self.compiled_other_pattern.search(preprocessed_text)
             if match:
                 ideology = match.group('ideology')
                 results.append(self._determine_side(ideology))
                 continue
 
-            results.append('none')
+            results.append(self._keyword_based_detection(preprocessed_text))
         return results
 
     def _determine_side(self, ideology: str) -> str:
@@ -94,6 +113,16 @@ class SelfReportDetector:
             return 'right'
         return 'none'
 
+
+    def _keyword_based_detection(self, text: str) -> str:
+        """Heuristic detection based on keywords."""
+        if any(keyword in text for keyword in self.left_keywords):
+            return 'left'
+        elif any(keyword in text for keyword in self.right_keywords):
+            return 'right'
+        elif any(keyword in text for keyword in self.center_keywords):
+            return 'center'
+        return 'none'
 
 # # Example usage
 # if __name__ == "__main__":
