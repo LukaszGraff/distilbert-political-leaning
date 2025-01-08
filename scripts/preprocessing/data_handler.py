@@ -53,7 +53,7 @@ class DataHandler:
         self.data['word_count'] = self.data[column].apply(lambda x: len(x.split()))
 
 
-    def chunk_posts(self, column='post', word_limit=300):
+    def chunk_posts(self, column='post', word_limit=500):
         """
         Chunk the instances of the DataFrame into pieces with at most `word_limit` words in the specified column.
 
@@ -82,7 +82,7 @@ class DataHandler:
         self.add_word_count()
 
 
-    def remove_short_posts(self, min_word_count=300):
+    def remove_short_posts(self, min_word_count=500):
         """
         Remove posts with a word count less than `min_word_count`.
 

@@ -8,85 +8,126 @@ from transformers import (
     TrainingArguments, 
     Trainer
 )
-from datasets import Dataset, DatasetDict
-from sklearn.metrics import accuracy_score, f1_score
+from datasets import Dataset
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score
 
-# Read the processed data
-data_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'processed')
-df_train = pd.read_csv(os.path.join(data_path, 'train.csv'))
-df_val = pd.read_csv(os.path.join(data_path, 'val.csv'))
-df_test = pd.read_csv(os.path.join(data_path, 'test.csv'))
+class DistilBertTrainer:
+    """
+    A class used to train a DistilBERT model for sequence classification.
 
-# Map political_leaning labels to numerical values
-label_mapping = {"left": 0, "center": 1, "right": 2}
-df_train["label"] = df_train["political_leaning"].map(label_mapping)
-df_val["label"] = df_val["political_leaning"].map(label_mapping)
-df_test["label"] = df_test["political_leaning"].map(label_mapping)
+    Attributes:
+        model_name (str): The name of the pre-trained DistilBERT model.
+        data_path (str): The path to the directory containing the training, validation, and test data.
+        text_column (str): The name of the column containing the text data.
+        label_column (str): The name of the column containing the label data.
+        label_mapping (dict): A dictionary mapping label names to numerical values.
+    """
 
-# Define evaluation metrics
-def compute_metrics(pred):
-    logits, labels = pred
-    predictions = np.argmax(logits, axis=-1)
-    accuracy = accuracy_score(labels, predictions)
-    f1 = f1_score(labels, predictions, average="weighted")
-    return {"accuracy": accuracy, "f1": f1}
+    def __init__(self, model_name, data_path, text_column, label_column, label_mapping):
+        """
+        Initializes the DistilBertTrainer with the specified parameters.
 
-# Convert DataFrames to Hugging Face Dataset format
-def convert_to_dataset(df, tokenizer, text_column, label_column):
-    def tokenize_function(examples):
-        return tokenizer(examples[text_column], padding="max_length", truncation=True)
+        Args:
+            model_name (str): The name of the pre-trained DistilBERT model.
+            data_path (str): The path to the directory containing the training, validation, and test data.
+            text_column (str): The name of the column containing the text data.
+            label_column (str): The name of the column containing the label data.
+            label_mapping (dict): A dictionary mapping label names to numerical values.
+        """
+        self.model_name = model_name
+        self.data_path = data_path
+        self.text_column = text_column
+        self.label_column = label_column
+        self.label_mapping = label_mapping
+        self.tokenizer = DistilBertTokenizer.from_pretrained(model_name)
+        self.model = DistilBertForSequenceClassification.from_pretrained(model_name, num_labels=len(label_mapping))
+        
+        self.df_train = pd.read_csv(os.path.join(data_path, 'train.csv'))
+        self.df_val = pd.read_csv(os.path.join(data_path, 'val.csv'))
+        self.df_test = pd.read_csv(os.path.join(data_path, 'test.csv'))
+        
+        self._map_labels()
+        self.train_dataset = self._convert_to_dataset(self.df_train)
+        self.val_dataset = self._convert_to_dataset(self.df_val)
+        self.test_dataset = self._convert_to_dataset(self.df_test)
 
-    dataset = Dataset.from_pandas(df)
-    return dataset.map(tokenize_function, batched=True)
+    def compute_metrics(self, pred):
+        """
+        Computes evaluation metrics for the model predictions.
 
-# Assuming df_train, df_val, df_test are available
-text_column = "post"  # Change as per your DataFrame structure
-label_column = "label"
+        Args:
+            pred (tuple): A tuple containing the logits and labels.
 
-tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+        Returns:
+            dict: A dictionary containing the accuracy, balanced accuracy, and F1 score.
+        """
+        logits, labels = pred
+        predictions = np.argmax(logits, axis=-1)
+        accuracy = accuracy_score(labels, predictions)
+        balanced_accuracy = balanced_accuracy_score(labels, predictions)
+        f1 = f1_score(labels, predictions, average="weighted")
+        return {"accuracy": accuracy, "balanced_accuracy": balanced_accuracy, "f1": f1}
 
-# Convert datasets
-datasets = DatasetDict({
-    "train": convert_to_dataset(df_train, tokenizer, text_column, label_column),
-    "validation": convert_to_dataset(df_val, tokenizer, text_column, label_column),
-    "test": convert_to_dataset(df_test, tokenizer, text_column, label_column),
-})
+    def train(self, output_dir, epochs=3, batch_size=8):
+        """
+        Trains the DistilBERT model.
 
-# Load the DistilBERT model
-model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=3)
+        Args:
+            output_dir (str): The directory where the model checkpoints and logs will be saved.
+            epochs (int, optional): The number of training epochs. Defaults to 3.
+            batch_size (int, optional): The batch size for training and evaluation. Defaults to 8.
+        """
+        training_args = TrainingArguments(
+            output_dir=output_dir,
+            num_train_epochs=epochs,
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
+            evaluation_strategy="epoch",
+            save_strategy="epoch",
+            logging_dir=os.path.join(output_dir, 'logs'),
+            logging_steps=10,
+        )
 
-# Define training arguments
-training_args = TrainingArguments(
-    output_dir="./results",          # output directory
-    evaluation_strategy="epoch",    # Evaluate every epoch
-    save_strategy="epoch",
-    logging_dir="./logs",           # directory for storing logs
-    logging_steps=10,
-    per_device_train_batch_size=16,  # batch size for training
-    per_device_eval_batch_size=16,   # batch size for evaluation
-    num_train_epochs=3,              # number of training epochs
-    weight_decay=0.01,               # strength of weight decay
-    save_total_limit=1,              # Only keep the most recent model checkpoint
-    load_best_model_at_end=True      # Load best model after training
-)
+        trainer = Trainer(
+            model=self.model,
+            args=training_args,
+            train_dataset=self.train_dataset,
+            eval_dataset=self.val_dataset,
+            compute_metrics=self.compute_metrics,
+        )
 
-# Initialize Trainer
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=datasets["train"],
-    eval_dataset=datasets["validation"],
-    tokenizer=tokenizer,
-    compute_metrics=compute_metrics
-)
+        trainer.train()
 
-# Train the model
-trainer.train()
+    def _map_labels(self):
+        """
+        Maps the labels in the training, validation, and test data to numerical values.
+        """
+        self.df_train[self.label_column] = self.df_train["political_leaning"].map(self.label_mapping)
+        self.df_val[self.label_column] = self.df_val["political_leaning"].map(self.label_mapping)
+        self.df_test[self.label_column] = self.df_test["political_leaning"].map(self.label_mapping)
 
-# Evaluate the model
-eval_results = trainer.evaluate()
-print("Evaluation Results:", eval_results)
+    def _convert_to_dataset(self, df):
+        """
+        Converts a pandas DataFrame to a Hugging Face Dataset and tokenizes the text data.
 
-# Test the model
-test_results = trainer.predict(datasets["test"])
-print("Test Results:", test_results.metrics)
+        Args:
+            df (pd.DataFrame): The DataFrame to convert.
+
+        Returns:
+            Dataset: The tokenized Dataset.
+        """
+        def tokenize_function(examples):
+            return self.tokenizer(examples[self.text_column], padding="max_length", truncation=True)
+        dataset = Dataset.from_pandas(df)
+        return dataset.map(tokenize_function, batched=True)
+
+if __name__ == "__main__":
+    model_name = "distilbert-base-uncased"
+    data_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', '500')
+    text_column = "post"
+    label_column = "label"
+    label_mapping = {"left": 0, "center": 1, "right": 2}
+    
+    distilbert_trainer = DistilBertTrainer(model_name, data_path, text_column, label_column, label_mapping)
+    output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'distilbert_500')
+    distilbert_trainer.train(output_dir)
