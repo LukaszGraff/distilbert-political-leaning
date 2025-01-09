@@ -16,7 +16,7 @@ def main():
     train_df, val_df, test_df = data_handler.get_split_data()
 
     # Save the processed data
-    output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'processed')
+    output_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', '500')
     os.makedirs(output_dir, exist_ok=True)
 
     train_df.to_csv(os.path.join(output_dir, 'train.csv'), index=False)
