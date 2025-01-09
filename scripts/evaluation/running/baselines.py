@@ -145,10 +145,10 @@ class ZeroShotClassifier:
         Initializes the ZeroShotClassifier with the specified parameters.
 
         Args:
-            labels (list, optional): A list of candidate labels for classification. Defaults to ["left-wing/socialism", "right-wing/capitalism", "centrism"].
+            labels (list, optional): A list of candidate labels for classification. Defaults to ["left-wing/socialism", "centrism", "right-wing/capitalism"].
             hypothesis_template (str, optional): The hypothesis template for zero-shot classification. Defaults to "The author of this posts leans towards {}.".
         """
-        device = 0 if torch.cuda.is_available() else -1
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli", device=device)
         self.labels = labels
         self.hypothesis_template = hypothesis_template
@@ -171,20 +171,7 @@ class ZeroShotClassifier:
         return np.array(scores)
     
 class LLamaBatchPredictor:
-    """
-    A class used to perform batch text generation using a pre-trained LLaMA model.
-
-    Attributes:
-        model_name (str): The name of the pre-trained LLaMA model.
-    """
-
     def __init__(self, model_name="meta-llama/Llama-3.2-3B-Instruct"):
-        """
-        Initializes the LLamaBatchPredictor with the specified model name.
-
-        Args:
-            model_name (str, optional): The name of the pre-trained LLaMA model. Defaults to "meta-llama/Llama-3.2-3B-Instruct".
-        """
         self.pipe = pipeline(
             "text-generation",
             model=model_name,
@@ -193,37 +180,29 @@ class LLamaBatchPredictor:
         )
 
     def classify_texts_batch(self, texts, batch_size=8):
-        """
-        Generates text predictions for the given texts in batches.
-
-        Args:
-            texts (list): A list of text samples to generate predictions for.
-            batch_size (int, optional): The batch size for text generation. Defaults to 8.
-
-        Returns:
-            np.ndarray: Predicted probability distributions for the test samples.
-        """
         predictions = []
         with tqdm.tqdm(total=len(texts), desc="Predicting", unit="sample") as pbar:
             for i in range(0, len(texts), batch_size):
                 batch = texts[i:i + batch_size]
-                preds = self.pipe(batch)
-                for pred in preds:
-                    processed_output = self._postprocess_output(pred['generated_text'])
-                    predictions.append(self._map_to_labels(processed_output))
-                pbar.update(len(batch))
-        return np.array(predictions)
+                for text in batch:
+                    outputs = self.pipe(
+                        [
+                            {
+                                "role": "system",
+                                "content": "Classify the political leaning of the following text as 'left', 'right', or 'center'. Only respond with one of these three words.",
+                            },
+                            {"role": "user", "content": f"Text: {text}"},
+                        ],
+                        max_new_tokens=5,
+                        pad_token_id=128001
+                    )
+                    prediction = self._postprocess_output(outputs)
+                    predictions.append(prediction)
+                    pbar.update(1)
+        return self._postprocess_output(predictions)
+
 
     def _postprocess_output(self, output):
-        """
-        Post-processes the output from the LLaMA model.
-
-        Args:
-            output (str): The generated text from the LLaMA model.
-
-        Returns:
-            str: The processed output text.
-        """
         if isinstance(output, list):
             # Extract the assistant's message
             for message in output[0]['generated_text']:
