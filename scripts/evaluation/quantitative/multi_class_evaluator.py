@@ -140,9 +140,9 @@ class MultiClassEvaluator:
         return {
             'accuracy': self.get_accuracy(),
             'balanced_accuracy': self.get_balanced_accuracy(),
-            'confusion_matrix': self.get_confusion_matrix(),
-            'f1_score_per_class': self.get_f1_score_per_class()
-
+            'f1_score_per_class': self.get_f1_score_per_class(),
+            'f1_score_macro': self.get_f1_score(average='macro'),
+            'confusion_matrix': self.get_confusion_matrix()
         }
 
 # Example usage:
