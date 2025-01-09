@@ -30,8 +30,7 @@ def main():
     X_test = df_test["post"].tolist()
     y_test = df_test["political_leaning"].tolist()
 
-    #models = ['MostFrequent', 'TfIDF', 'ZeroShotClassifier', 'LLamaBatchPredictor', 'DistilBERT']
-    models = ['MostFrequent']
+    models = ['MostFrequent', 'TfIDF', 'ZeroShotClassifier', 'DistilBERT']
 
     run_models(models=models, X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test, data_path=data_path)
 
