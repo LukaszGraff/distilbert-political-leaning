@@ -1,5 +1,5 @@
 /data
 /models
-/vscode
+/.vscode
 hf_token.txt
 __pycache__/
