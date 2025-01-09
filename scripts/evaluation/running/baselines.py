@@ -82,7 +82,7 @@ class MostFrequent:
         """
         label_counts = Counter(y_train)
         self.most_frequent_class = label_counts.most_common(1)[0][0]
-        self.class_labels = list(label_counts.keys())
+        self.class_labels = [x for x in range(len(label_counts.keys()))]
 
     def predict(self, X_test):
         """

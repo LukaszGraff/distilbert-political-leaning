@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import glob
 
-from baselines import RandomGuessing, MostFrequent, TfIDF, ZeroShotClassifier, LLamaBatchPredictor
+from baselines import MostFrequent, TfIDF, ZeroShotClassifier, LLamaBatchPredictor
 from distilbert import DistilbertPredictor
 from sklearn.metrics import accuracy_score
 
@@ -30,8 +30,8 @@ def main():
     X_test = df_test["post"].tolist()
     y_test = df_test["political_leaning"].tolist()
 
-    #models = ['RandomGuessing', 'MostFrequent', 'TfIDF', 'ZeroShotClassifier', 'LLamaBatchPredictor', 'DistilBERT']
-    models = ['ZeroShotClassifier']
+    #models = ['MostFrequent', 'TfIDF', 'ZeroShotClassifier', 'LLamaBatchPredictor', 'DistilBERT']
+    models = ['MostFrequent']
 
     run_models(models=models, X_train=X_train, y_train=y_train, X_test=X_test, y_test=y_test, data_path=data_path)
 
@@ -51,14 +51,7 @@ def run_models(models, X_train, y_train, X_test, y_test, data_path):
         None
     """
     for model_name in models:
-        if model_name == 'RandomGuessing':
-            model = RandomGuessing()
-            model.train(y_train)
-            predictions = model.predict(X_test)
-            accuracy = accuracy_score(y_test, predictions.argmax(axis=1))
-            print("RandomGuessing accuracy:", accuracy)
-            save_predictions(predictions, y_test, model_name)
-        elif model_name == 'MostFrequent':
+        if model_name == 'MostFrequent':
             model = MostFrequent()
             model.train(y_train)
             predictions = model.predict(X_test)
