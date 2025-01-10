@@ -97,8 +97,9 @@ class SelfReportDetector:
                 ideology = match.group('ideology')
                 results.append(self._determine_side(ideology))
                 continue
-
-            results.append(self._keyword_based_detection(preprocessed_text))
+            
+            # Otherwise, append 'none'
+            results.append('none')
         return results
 
     def _determine_side(self, ideology: str) -> str:
@@ -113,32 +114,21 @@ class SelfReportDetector:
             return 'right'
         return 'none'
 
+# # Example usage
+# if __name__ == "__main__":
+#     detector = SelfReportDetector()
+#     text_samples = [
+#         "As a socialist, we believe in universal healthcare.",
+#         "As a socialists I know the struggle.",
+#         "As a left-winger I always vote green.",
+#         "I consider myself as left-wing.",
+#         "I view myself right wing and strongly support market freedoms.",
+#         "I am capitalist at heart.",
+#         "As a right-wing individuals, we support strict immigration laws.",
+#         "I consider myself socialist.",
+#         "I identify myself as a left wing economist."
+#     ]
 
-    def _keyword_based_detection(self, text: str) -> str:
-        """Heuristic detection based on keywords."""
-        if any(keyword in text for keyword in self.left_keywords):
-            return 'left'
-        elif any(keyword in text for keyword in self.right_keywords):
-            return 'right'
-        elif any(keyword in text for keyword in self.center_keywords):
-            return 'center'
-        return 'none'
-
-# # # Example usage
-# # if __name__ == "__main__":
-# #     detector = SelfReportDetector()
-# #     text_samples = [
-# #         "As a socialist, we believe in universal healthcare.",
-# #         "As a socialists I know the struggle.",
-# #         "As a left-winger I always vote green.",
-# #         "I consider myself as left-wing.",
-# #         "I view myself right wing and strongly support market freedoms.",
-# #         "I am capitalist at heart.",
-# #         "As a right-wing individuals, we support strict immigration laws.",
-# #         "I consider myself socialist.",
-# #         "I identify myself as a left wing economist."
-# #     ]
-
-# #     for text in text_samples:
-# #         ideology = detector.detect_ideology(text)
-# #         print(f"'{text}' -> Detected ideology: {ideology}")
+#     for text in text_samples:
+#         ideology = detector.detect_ideology(text)
+#         print(f"'{text}' -> Detected ideology: {ideology}")
