@@ -7,7 +7,7 @@ from multi_class_evaluator import MultiClassEvaluator
 
 
 def main():
-    results_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'results', 'metrics'))
+    results_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'results'))
     file_names = ['MostFrequent_predictions.csv', 'TfIDF_predictions.csv', 'ZeroShotClassifier_predictions.csv', 'DistilbertPredictor_predictions.csv']
     result_paths = [os.path.join(results_dir, file_name) for file_name in file_names]
     data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data', '500'))

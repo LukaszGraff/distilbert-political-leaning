@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import balanced_accuracy_score
 from sklearn.metrics import (
     accuracy_score,
+    balanced_accuracy_score,
     precision_score,
     recall_score,
     f1_score,
@@ -100,7 +100,7 @@ class MultiClassEvaluator:
         for cls in unique_classes:
             cls_true_labels = (self.true_labels == cls).astype(int)
             cls_pred_labels = (self.pred_classes == cls).astype(int)
-            f1_scores[cls] = f1_score(cls_true_labels, cls_pred_labels, average='micro')
+            f1_scores[cls] = f1_score(cls_true_labels, cls_pred_labels, average='binary')
         return f1_scores
 
     def get_confusion_matrix(self) -> np.ndarray:
