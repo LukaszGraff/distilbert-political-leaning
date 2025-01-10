@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.model_selection import GroupShuffleSplit
 
 from self_report_detector import SelfReportDetector
