@@ -1,6 +1,6 @@
 # Exploring Transformer Fine-Tuning for Political Leaning Prediction
 
-This project explores the fine-tuning of transformer models for predicting political leaning based on text data. The raw data used in this project comes from the paper by Chris Emmery, Marilù Miotto, et al. (2024), titled "Sobr: A corpus for stylometry, obfuscation, and bias on Reddit," presented at LREC-COLING. The data should be downloaded and placed into the [`data`](data) folder.
+This project explores the fine-tuning of transformer models for predicting political leaning based on text data. The raw data used in this project comes from the paper by Chris Emmery, Marilù Miotto, et al. (2024), titled ["Sobr: A corpus for stylometry, obfuscation, and bias on Reddit"](https://aclanthology.org/2024.lrec-main.1302.pdf), presented at LREC-COLING. The data should be downloaded and placed into the [`data`](data) folder.
 
 ## Setup
 
