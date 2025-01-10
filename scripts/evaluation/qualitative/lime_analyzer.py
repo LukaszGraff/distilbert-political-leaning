@@ -50,13 +50,14 @@ class LimeAnalyzer:
         probs = torch.nn.functional.softmax(outputs.logits, dim=1).detach().cpu().numpy()
         return probs
 
-    def explain_text(self, text, num_features=10, labels=[0, 1, 2]):
+    def explain_text(self, text, num_features=10, num_samples=500, labels=[0, 1, 2]):
         """
         Generates an explanation for the given text using LIME.
 
         Args:
             text (str): The text to explain.
             num_features (int, optional): The number of features to include in the explanation. Defaults to 10.
+            num_samples (int, optional): The size of the neighborhood to learn the linear model. Defaults to 500.
             labels (list, optional): The list of labels to explain. Defaults to [0, 1, 2].
 
         Returns:
@@ -66,6 +67,7 @@ class LimeAnalyzer:
             text,
             self.predict_proba,
             num_features=num_features,
+            num_samples=num_samples,
             labels=labels
         )
         return explanation
